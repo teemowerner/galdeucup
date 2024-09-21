@@ -1,46 +1,41 @@
 from flask import Blueprint, jsonify, request
-from models import db, Item, Vote
-
-class Category(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-
-    def to_dict(self):
-        return {"id": self.id, "name": self.name}
-
-class Item(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    votes = db.Column(db.Integer, default=0)
-    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
-    category = db.relationship('Category', backref=db.backref('items', lazy=True))
-
-    def to_dict(self):
-        print("teemo")
-        return {"id": self.id, "name": self.name, "votes": self.votes, "category_id": self.category_id}
+from models import db, Category, Item, Vote  # models.py에서 db, Category, Item을 가져오기
 
 main = Blueprint('main', __name__)
-# IP 기반 중복 투표 방지 로직
-# POST 요청만 허용.
-@main.route('/vote', methods=['POST'])
-def vote_item():
+
+@main.route('/create_category', methods=['POST'])
+def create_category():
     data = request.json
-    item_id = data.get('item_id')
-    ip_address = request.remote_addr  # 클라이언트의 IP 주소 가져오기
+    name = data.get('name')
+    if not name:
+        return jsonify({"error": "카테고리 이름이 필요합니다."}), 400
+    category = Category(name=name)
+    db.session.add(category)
+    print("teemo", category)
+    db.session.commit()
+    return jsonify(category.to_dict()), 201
 
-    # 이미 해당 IP가 투표했는지 확인
-    existing_vote = Vote.query.filter_by(item_id=item_id, ip_address=ip_address).first()
-    if existing_vote:
-        return jsonify({"error": "이미 투표하셨습니다."}), 403
+@main.route('/create_item', methods=['POST'])
+def create_item():
+    data = request.json
+    name = data.get('name')
+    category_id = data.get('category_id')
 
-    # 새 투표 기록 추가
-    new_vote = Vote(ip_address=ip_address, item_id=item_id)
-    db.session.add(new_vote)
+    if not name or not category_id:
+        return jsonify({"error": "품목 이름과 카테고리 ID가 필요합니다."}), 400
 
-    # Item 테이블의 투표 수 증가
-    item = Item.query.get_or_404(item_id)
-    item.votes += 1
+    item = Item(name=name, category_id=category_id)
+    db.session.add(item)
     db.session.commit()
 
-    return jsonify(item.to_dict())
+    return jsonify(item.to_dict()), 201
 
+@main.route('/categories', methods=['GET'])
+def get_categories():
+    categories = Category.query.all()
+    return jsonify([category.to_dict() for category in categories])
+
+@main.route('/categories/<int:category_id>/items', methods=['GET'])
+def get_items(category_id):
+    items = Item.query.filter_by(category_id=category_id).all()
+    return jsonify([item.to_dict() for item in items])

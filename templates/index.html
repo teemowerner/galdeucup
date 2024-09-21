@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카테고리 목록</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- jQuery 사용 -->
+</head>
+<body>
+    <h1>카테고리 목록</h1>
+
+    <!-- 카테고리 리스트 -->
+    <ul>
+      {% for category in categories %}
+        <li>
+            <a href="/category/{{ category.url }}">{{ category.name }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <!-- 카테고리 추가 섹션 -->
+    <h2>카테고리 추가하기</h2>
+    <input type="text" id="categoryName" placeholder="카테고리 이름">
+    <button onclick="addCategory()">카테고리 추가</button>
+
+    <script>
+        // 카테고리 추가 기능
+        function addCategory() {
+            var categoryName = $('#categoryName').val();
+            if (!categoryName) {
+                alert("카테고리 이름을 입력하세요.");
+                return;
+            }
+
+            // AJAX 요청으로 새로운 카테고리 추가
+            $.ajax({
+                url: "/create_category",  // 카테고리 추가 API
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    "name": categoryName
+                }),
+                success: function(response) {
+                    alert(response.message);  // 성공 메시지
+                    location.reload();  // 페이지 새로고침
+                },
+                error: function(xhr, status, error) {
+                    var response = JSON.parse(xhr.responseText);
+                    alert(response.error);  // 에러 메시지 표시
+                }
+            });
+        }
+    </script>
+</body>
+</html>

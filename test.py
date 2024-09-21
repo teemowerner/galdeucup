@@ -1,7 +1,7 @@
 from app import db, app
 from sqlalchemy import inspect
-
-# 애플리케이션 컨텍스트 내에서 실행
-with app.app_context():
-    inspector = inspect(db.engine)
-    print(inspector.get_table_names())
+from googletrans import Translator
+from slugify import slugify
+a = Translator().translate('나이키윔블던', src='ko', dest='en')
+print(a.text.lower())
+print(slugify("대학교3학년").lower())

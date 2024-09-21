@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ category.name }} - 아이템 목록</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- jQuery 사용 -->
+</head>
+<body>
+    <h1>{{ category.name }} 카테고리의 아이템 목록</h1>
+
+    <!-- 카테고리 아이템 리스트 -->
+    <ul>
+      {% for item in items %}
+        <li>
+            {{ item.name }} - 투표 수: {{ item.votes }}
+        </li>
+        <li>
+            <button onclick="vote({{ item.id }})">투표</button>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <!-- 아이템 추가 섹션 -->
+    <h2>아이템 추가하기</h2>
+    <input type="text" id="itemName" placeholder="아이템 이름">
+    <button onclick="addItem()">아이템 추가</button>
+
+    <!-- 카테고리 목록으로 돌아가는 링크 -->
+    <a href="/">카테고리 목록으로 돌아가기</a>
+
+    <script>
+        // 투표 기능
+        function vote(itemId) {
+            $.ajax({
+                url: "/vote",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ "item_id": itemId }),
+                success: function(response) {
+                    alert(response.message);
+                    location.reload();  // 페이지 새로고침
+                },
+                error: function(xhr, status, error) {
+                    alert("투표 중 오류가 발생했습니다.");
+                }
+            });
+        }
+
+        // 아이템 추가 기능
+        function addItem() {
+            var itemName = $('#itemName').val();
+            if (!itemName) {
+                alert("아이템 이름을 입력하세요.");
+                return;
+            }
+
+            // AJAX 요청으로 새로운 아이템 추가
+            $.ajax({
+                url: "/add_item",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    "name": itemName,
+                    "category_id": {{ category.id }}  // 현재 카테고리의 ID를 전송
+                }),
+                success: function(response) {
+                    alert(response.message);
+                    location.reload();  // 페이지 새로고침
+                },
+                error: function(xhr, status, error) {
+                    alert("아이템 추가 중 오류가 발생했습니다.");
+                }
+            });
+        }
+    </script>
+</body>
+</html>
